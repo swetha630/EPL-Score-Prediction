@@ -3,58 +3,59 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
-st.set_page_config(page_title="Player Performance Prediction", layout="centered")
+st.set_page_config(page_title="Player Performance Prediction")
 
 st.title("⚽ Player Performance Prediction")
 
-# Upload dataset
 uploaded_file = st.file_uploader("Upload your dataset (CSV)", type=["csv"])
 
-if uploaded_file is not None:
+if uploaded_file:
     df = pd.read_csv(uploaded_file)
     st.success("Dataset loaded successfully!")
 
-    # Keep only numeric columns
-    df_numeric = df.select_dtypes(include=["int64", "float64"])
+    # Convert all columns to numeric (force errors to NaN)
+    df = df.apply(pd.to_numeric, errors="coerce")
 
-    if df_numeric.shape[1] < 2:
-        st.error("Dataset must contain at least two numeric columns.")
+    # Remove infinite values
+    df.replace([np.inf, -np.inf], np.nan, inplace=True)
+
+    # Drop rows with missing values
+    df = df.dropna()
+
+    # Check if enough data exists
+    if df.shape[0] < 2 or df.shape[1] < 2:
+        st.error("Dataset does not contain enough clean numeric data.")
         st.stop()
 
-    # Remove rows with missing values
-    df_numeric = df_numeric.dropna()
-
-    # Select target (last column)
-    target_column = df_numeric.columns[-1]
-    X = df_numeric.drop(columns=[target_column])
-    y = df_numeric[target_column]
+    # Split features and target
+    target_column = df.columns[-1]
+    X = df.drop(columns=[target_column])
+    y = df[target_column]
 
     # Train model
     model = LinearRegression()
     model.fit(X, y)
 
-    st.subheader("Enter Player Data")
+    st.subheader("Enter Input Values")
 
     user_input = {}
     for col in X.columns:
         user_input[col] = st.number_input(
-            label=col,
-            min_value=float(X[col].min()),
-            max_value=float(X[col].max()),
+            col,
             value=float(X[col].mean())
         )
 
     if st.button("Predict"):
         input_df = pd.DataFrame([user_input])
         prediction = model.predict(input_df)
-
         st.success(f"🎯 Predicted Value: {prediction[0]:.2f}")
 
-    with st.expander("🔍 View cleaned dataset"):
-        st.dataframe(df_numeric.head())
+    with st.expander("📊 Cleaned Dataset Preview"):
+        st.dataframe(df.head())
 
 else:
-    st.info("Please upload a CSV file to get started.")
+    st.info("Please upload a CSV file to begin.")
+
 
 
 
