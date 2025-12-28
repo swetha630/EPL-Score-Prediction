@@ -2,12 +2,9 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load models
-clf_model = joblib.load("classification_pipeline.pkl")
+# Load trained pipelines
 reg_model = joblib.load("regression_pipeline.pkl")
-
-# Get feature names directly from model
-feature_columns = clf_model.feature_names_in_
+clf_model = joblib.load("classification_pipeline.pkl")
 
 st.title("⚽ Football Match Prediction")
 
@@ -16,34 +13,49 @@ menu = st.sidebar.selectbox(
     ["Match Outcome", "Player Performance"]
 )
 
-# ---------- MATCH OUTCOME ----------
+# ---------------- MATCH OUTCOME ----------------
 if menu == "Match Outcome":
     st.header("🏆 Match Outcome Prediction")
 
-    user_input = {}
-    for col in feature_columns:
-        user_input[col] = st.number_input(col, value=0)
+    # Input fields
+    user_input = {
+        "Age": st.number_input("Age", 0),
+        "Appearances": st.number_input("Appearances", 0),
+        "Goals": st.number_input("Goals", 0),
+        "Assists": st.number_input("Assists", 0),
+        "Shots": st.number_input("Shots", 0),
+        "Passes": st.number_input("Passes", 0),
+        "Tackles": st.number_input("Tackles", 0),
+        "Interceptions": st.number_input("Interceptions", 0),
+    }
 
     input_df = pd.DataFrame([user_input])
 
-    # IMPORTANT FIX
-    prediction = clf_model.predict(input_df.values)
+    if st.button("Predict Match Outcome"):
+        prediction = clf_model.predict(input_df)
+        label_map = {0: "Loss", 1: "Draw", 2: "Win"}
+        st.success(f"🏁 Predicted Outcome: {label_map[prediction[0]]}")
 
-    label_map = {0: "Loss", 1: "Draw", 2: "Win"}
-    st.success(f"🏁 Predicted Outcome: {label_map[prediction[0]]}")
-
-# ---------- PLAYER PERFORMANCE ----------
+# ---------------- PLAYER PERFORMANCE ----------------
 elif menu == "Player Performance":
     st.header("⚽ Player Performance Prediction")
 
-    user_input = {}
-    for col in feature_columns:
-        user_input[col] = st.number_input(col, value=0)
+    user_input = {
+        "Age": st.number_input("Age", 0),
+        "Appearances": st.number_input("Appearances", 0),
+        "Goals": st.number_input("Goals", 0),
+        "Assists": st.number_input("Assists", 0),
+        "Shots": st.number_input("Shots", 0),
+        "Passes": st.number_input("Passes", 0),
+        "Tackles": st.number_input("Tackles", 0),
+        "Interceptions": st.number_input("Interceptions", 0),
+    }
 
     input_df = pd.DataFrame([user_input])
 
-    goals = reg_model.predict(input_df.values)
-    st.success(f"🎯 Predicted Goals: {round(goals[0], 2)}")
+    prediction = reg_model.predict(input_df)
+    st.success(f"🎯 Predicted Goals: {round(prediction[0], 2)}")
+
 
 
 
