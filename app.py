@@ -1,50 +1,80 @@
 import streamlit as st
 import pandas as pd
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 
-st.set_page_config(page_title="Player Performance Prediction", layout="centered")
+st.set_page_config(page_title="Football Prediction App", layout="centered")
 
-st.title("⚽ Player Performance Prediction")
+st.title("⚽ Football Prediction System")
 
-# Upload cleaned dataset
-uploaded_file = st.file_uploader("Upload cleaned dataset (CSV)", type=["csv"])
+# Sidebar navigation
+page = st.sidebar.selectbox(
+    "Select Feature",
+    ["Match Outcome Prediction", "Player Performance Prediction"]
+)
 
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
+# =========================
+# SCREEN 1: MATCH OUTCOME
+# =========================
+if page == "Match Outcome Prediction":
 
-    st.success("Dataset loaded successfully!")
+    st.header("🏆 Match Outcome Prediction (Win / Draw / Loss)")
 
-    # Select target column (last column)
-    target_col = df.columns[-1]
-    X = df.drop(columns=[target_col])
-    y = df[target_col]
+    uploaded_file = st.file_uploader("Upload Match Dataset (CSV)", type=["csv"], key="match")
 
-    # Train model
-    model = LinearRegression()
-    model.fit(X, y)
+    if uploaded_file:
+        df = pd.read_csv(uploaded_file)
 
-    st.subheader("Enter Player Statistics")
+        # Assume last column is match result (0=Loss,1=Draw,2=Win)
+        target = df.columns[-1]
+        X = df.drop(columns=[target])
+        y = df[target]
 
-    user_input = {}
+        model = LogisticRegression(max_iter=1000)
+        model.fit(X, y)
 
-    for col in X.columns:
-        value = st.text_input(f"{col}", placeholder=f"Enter {col}")
-        if value != "":
-            try:
-                user_input[col] = float(value)
-            except ValueError:
-                st.error(f"Invalid value for {col}")
+        st.subheader("Enter Match Statistics")
 
-    if st.button("Predict"):
-        if len(user_input) != len(X.columns):
-            st.warning("⚠️ Please fill all fields before predicting.")
-        else:
+        user_input = {}
+        for col in X.columns:
+            user_input[col] = st.number_input(f"{col}", value=float(X[col].mean()))
+
+        if st.button("Predict Match Result"):
+            input_df = pd.DataFrame([user_input])
+            prediction = model.predict(input_df)[0]
+
+            result_map = {0: "Loss", 1: "Draw", 2: "Win"}
+            st.success(f"🏟️ Predicted Match Result: **{result_map[prediction]}**")
+
+# =========================
+# SCREEN 2: PLAYER PERFORMANCE
+# =========================
+elif page == "Player Performance Prediction":
+
+    st.header("⚽ Player Performance Prediction")
+
+    uploaded_file = st.file_uploader("Upload Player Dataset (CSV)", type=["csv"], key="player")
+
+    if uploaded_file:
+        df = pd.read_csv(uploaded_file)
+
+        target = df.columns[-1]
+        X = df.drop(columns=[target])
+        y = df[target]
+
+        model = LinearRegression()
+        model.fit(X, y)
+
+        st.subheader("Enter Player Statistics")
+
+        user_input = {}
+        for col in X.columns:
+            user_input[col] = st.number_input(f"{col}", value=float(X[col].mean()))
+
+        if st.button("Predict Player Performance"):
             input_df = pd.DataFrame([user_input])
             prediction = model.predict(input_df)
-            st.success(f"🎯 Predicted Value: {prediction[0]:.2f}")
+            st.success(f"⚽ Predicted Value: {prediction[0]:.2f}")
 
-else:
-    st.info("Please upload a cleaned CSV file to continue.")
 
 
 
