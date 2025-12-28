@@ -2,11 +2,11 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load trained models
+# Load models
 clf_model = joblib.load("classification_pipeline.pkl")
 reg_model = joblib.load("regression_pipeline.pkl")
 
-# Get exact feature order used during training
+# Get feature names directly from model
 feature_columns = clf_model.feature_names_in_
 
 st.title("⚽ Football Match Prediction")
@@ -25,11 +25,11 @@ if menu == "Match Outcome":
         user_input[col] = st.number_input(col, value=0)
 
     input_df = pd.DataFrame([user_input])
-    input_df = input_df[feature_columns]  # enforce correct order
 
-    prediction = clf_model.predict(input_df)
+    # IMPORTANT FIX
+    prediction = clf_model.predict(input_df.values)
+
     label_map = {0: "Loss", 1: "Draw", 2: "Win"}
-
     st.success(f"🏁 Predicted Outcome: {label_map[prediction[0]]}")
 
 # ---------- PLAYER PERFORMANCE ----------
@@ -41,10 +41,10 @@ elif menu == "Player Performance":
         user_input[col] = st.number_input(col, value=0)
 
     input_df = pd.DataFrame([user_input])
-    input_df = input_df[feature_columns]
 
-    prediction = reg_model.predict(input_df)
-    st.success(f"🎯 Predicted Goals: {round(prediction[0], 2)}")
+    goals = reg_model.predict(input_df.values)
+    st.success(f"🎯 Predicted Goals: {round(goals[0], 2)}")
+
 
 
 
