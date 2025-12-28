@@ -6,60 +6,37 @@ st.set_page_config(page_title="Football Prediction System", layout="centered")
 
 st.title("⚽ Football Prediction System")
 
-# ==========================
-# SIDEBAR NAVIGATION
-# ==========================
-page = st.sidebar.radio(
-    "Select Prediction Type",
+page = st.sidebar.selectbox(
+    "Choose Prediction Type",
     ["Match Outcome Prediction", "Player Performance Prediction"]
 )
 
-# ======================================
-# FUNCTION: LOAD & CLEAN DATA
-# ======================================
-def load_and_clean_data(file):
+# -----------------------------------------------------
+# HELPER FUNCTION
+# -----------------------------------------------------
+def load_data(file):
     df = pd.read_csv(file)
-
-    # Convert all columns to numeric
     df = df.apply(pd.to_numeric, errors="coerce")
-
-    # Drop rows with missing values
     df = df.dropna()
-
     return df
 
-# ======================================
+# =====================================================
 # MATCH OUTCOME PREDICTION
-# ======================================
+# =====================================================
 if page == "Match Outcome Prediction":
 
     st.header("🏆 Match Outcome Prediction")
+    st.info("Enter match statistics such as goals, shots, possession etc.")
 
-    file = st.file_uploader("Upload Match Dataset", type=["csv"], key="match")
+    file = st.file_uploader("Upload Match Dataset", type=["csv"])
 
     if file:
-        df = load_and_clean_data(file)
+        df = load_data(file)
 
-        if df.shape[1] < 2:
-            st.error("Dataset must have at least 2 numeric columns.")
-            st.stop()
-
-        # Assume last column = goal difference or match result
-        target_col = df.columns[-1]
-
-        # Convert continuous values to classes
-        def classify_result(x):
-            if x > 0:
-                return 2   # Win
-            elif x == 0:
-                return 1   # Draw
-            else:
-                return 0   # Loss
-
-        df["result"] = df[target_col].apply(classify_result)
-
-        X = df.drop(columns=[target_col, "result"])
-        y = df["result"]
+        # Last column = match result (0 = Loss, 1 = Draw, 2 = Win)
+        target = df.columns[-1]
+        X = df.drop(columns=[target])
+        y = df[target]
 
         model = LogisticRegression(max_iter=1000)
         model.fit(X, y)
@@ -68,30 +45,33 @@ if page == "Match Outcome Prediction":
 
         user_input = {}
         for col in X.columns:
-            user_input[col] = st.number_input(col, value=float(X[col].mean()))
+            user_input[col] = st.text_input(
+                f"Enter {col}",
+                placeholder=f"Example: {round(X[col].mean(),2)}"
+            )
 
         if st.button("Predict Match Outcome"):
-            input_df = pd.DataFrame([user_input])
-            prediction = model.predict(input_df)[0]
+            if "" in user_input.values():
+                st.warning("⚠️ Please fill all input fields.")
+            else:
+                input_df = pd.DataFrame([{k: float(v) for k, v in user_input.items()}])
+                prediction = model.predict(input_df)[0]
 
-            result_map = {0: "Loss", 1: "Draw", 2: "Win"}
-            st.success(f"🏆 Match Result: **{result_map[prediction]}**")
+                label_map = {0: "Loss", 1: "Draw", 2: "Win"}
+                st.success(f"🏆 Predicted Match Result: **{label_map[prediction]}**")
 
-# ======================================
+# =====================================================
 # PLAYER PERFORMANCE PREDICTION
-# ======================================
+# =====================================================
 elif page == "Player Performance Prediction":
 
     st.header("⚽ Player Performance Prediction")
+    st.info("Enter player statistics to predict performance")
 
-    file = st.file_uploader("Upload Player Dataset", type=["csv"], key="player")
+    file = st.file_uploader("Upload Player Dataset", type=["csv"])
 
     if file:
-        df = load_and_clean_data(file)
-
-        if df.shape[1] < 2:
-            st.error("Dataset must contain at least 2 numeric columns.")
-            st.stop()
+        df = load_data(file)
 
         target = df.columns[-1]
         X = df.drop(columns=[target])
@@ -100,16 +80,23 @@ elif page == "Player Performance Prediction":
         model = LinearRegression()
         model.fit(X, y)
 
-        st.subheader("Enter Player Stats")
+        st.subheader("Enter Player Statistics")
 
         user_input = {}
         for col in X.columns:
-            user_input[col] = st.number_input(col, value=float(X[col].mean()))
+            user_input[col] = st.text_input(
+                f"Enter {col}",
+                placeholder=f"Example: {round(X[col].mean(),2)}"
+            )
 
         if st.button("Predict Performance"):
-            input_df = pd.DataFrame([user_input])
-            prediction = model.predict(input_df)
-            st.success(f"⭐ Predicted Value: {prediction[0]:.2f}")
+            if "" in user_input.values():
+                st.warning("⚠️ Please fill all fields.")
+            else:
+                input_df = pd.DataFrame([{k: float(v) for k, v in user_input.items()}])
+                prediction = model.predict(input_df)
+                st.success(f"⭐ Predicted Performance Value: {prediction[0]:.2f}")
+
 
 
 
