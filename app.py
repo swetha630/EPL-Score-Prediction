@@ -7,26 +7,29 @@ st.title("⚽ Player Performance Prediction")
 
 uploaded_file = st.file_uploader("Upload your dataset (CSV)", type=["csv"])
 
-if uploaded_file is not None:
+if uploaded_file:
     df = pd.read_csv(uploaded_file)
 
     st.success("Dataset loaded successfully!")
 
-    # Separate features & target
-    target_column = df.columns[-1]
-    feature_columns = df.columns[:-1]
+    # Keep only numeric columns
+    numeric_df = df.select_dtypes(include=["int64", "float64"])
 
-    X = df[feature_columns]
-    y = df[target_column]
+    if numeric_df.shape[1] < 2:
+        st.error("Dataset must contain at least one feature and one target column.")
+        st.stop()
 
-    # Train model
+    target_column = numeric_df.columns[-1]
+    X = numeric_df.drop(columns=[target_column])
+    y = numeric_df[target_column]
+
     model = LinearRegression()
     model.fit(X, y)
 
-    st.subheader("Enter Player Data")
+    st.subheader("Enter Player Stats")
 
     user_input = {}
-    for col in feature_columns:
+    for col in X.columns:
         user_input[col] = st.number_input(
             col,
             float(X[col].min()),
@@ -34,13 +37,11 @@ if uploaded_file is not None:
             float(X[col].mean())
         )
 
-    if st.button("Predict Goals"):
+    if st.button("Predict"):
         input_df = pd.DataFrame([user_input])
         prediction = model.predict(input_df)
-        st.success(f"🎯 Predicted Goals: {prediction[0]:.2f}")
+        st.success(f"🎯 Predicted Value: {prediction[0]:.2f}")
 
-else:
-    st.warning("Please upload a CSV file to continue.")
 
 
 
