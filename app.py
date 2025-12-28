@@ -17,7 +17,8 @@ menu = st.sidebar.selectbox(
 if menu == "Match Outcome":
     user_input = {}
     for col in feature_columns:
-        user_input[col] = st.number_input(col, value=0.0)
+        user_input[col] = st.number_input(col, min_value=0, step=1, value=0)
+
 
     input_df = pd.DataFrame([user_input])
     input_df = input_df[feature_columns]  # 🔥 THIS LINE FIXES EVERYTHING
