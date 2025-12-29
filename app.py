@@ -1,110 +1,81 @@
+import os
+import joblib
 import streamlit as st
 import pandas as pd
-from sklearn.linear_model import LinearRegression, LogisticRegression
 
-st.set_page_config(page_title="Football Prediction System", layout="centered")
+# -------------------------------------------------
+# APP CONFIG
+# -------------------------------------------------
+st.set_page_config(page_title="EPL Predictor", layout="centered")
+st.title("⚽ EPL Match & Player Prediction")
 
-st.title("⚽ Football Prediction System")
+# -------------------------------------------------
+# SAFE MODEL LOADING
+# -------------------------------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-page = st.sidebar.selectbox(
-    "Choose Prediction Type",
-    ["Match Outcome Prediction", "Player Performance Prediction"]
-)
+def safe_load(filename):
+    path = os.path.join(BASE_DIR, filename)
+    if not os.path.exists(path):
+        st.error(f"Missing file: {filename}")
+        st.stop()
+    return joblib.load(path)
 
-# -----------------------------------------
-# Helper function
-# -----------------------------------------
-def load_clean_data(file):
-    df = pd.read_csv(file)
-    df = df.apply(pd.to_numeric, errors="coerce")
-    df = df.dropna()
-    return df
+reg_model = safe_load("player_performance_model.pkl")
+clf_model = safe_load("match_outcome_model.pkl")
 
-# ========================================
-# MATCH OUTCOME PREDICTION
-# ========================================
-if page == "Match Outcome Prediction":
+st.success("✅ Models loaded successfully")
 
-    st.header("🏆 Match Outcome Prediction")
-    st.write("Enter match statistics manually to predict the result.")
-
-    file = st.file_uploader("Upload match dataset (CSV)", type=["csv"])
-
-    if file:
-        df = load_clean_data(file)
-
-        # Assume last column is goal difference
-        target_col = df.columns[-1]
-
-        # Convert to classification
-        def classify(x):
-            if x > 0:
-                return 2   # Win
-            elif x == 0:
-                return 1   # Draw
-            else:
-                return 0   # Loss
-
-        df["result"] = df[target_col].apply(classify)
-
-        X = df.drop(columns=[target_col, "result"])
-        y = df["result"]
-
-        model = LogisticRegression(max_iter=1000)
-        model.fit(X, y)
-
-        st.subheader("Enter Match Statistics")
-
-        user_input = {}
-        for col in X.columns:
-            value = st.text_input(f"{col}", placeholder="Enter numeric value")
-            if value != "":
-                user_input[col] = float(value)
-
-        if st.button("Predict Match Outcome"):
-            if len(user_input) != len(X.columns):
-                st.warning("⚠️ Please fill all fields.")
-            else:
-                input_df = pd.DataFrame([user_input])
-                pred = model.predict(input_df)[0]
-                label_map = {0: "Loss", 1: "Draw", 2: "Win"}
-                st.success(f"🏆 Predicted Result: **{label_map[pred]}**")
-
-# ========================================
+# -------------------------------------------------
 # PLAYER PERFORMANCE PREDICTION
-# ========================================
-elif page == "Player Performance Prediction":
+# -------------------------------------------------
+st.header("🎯 Player Performance Prediction")
 
-    st.header("⚽ Player Performance Prediction")
-    st.write("Enter player statistics to predict performance.")
+with st.form("player_form"):
+    shots = st.number_input("Shots", 0, 200, 50)
+    passes = st.number_input("Passes", 0, 3000, 1200)
+    age = st.number_input("Age", 16, 45, 25)
+    appearances = st.number_input("Appearances", 0, 60, 25)
 
-    file = st.file_uploader("Upload player dataset", type=["csv"])
+    submit_player = st.form_submit_button("Predict Goals")
 
-    if file:
-        df = load_clean_data(file)
+if submit_player:
+    player_input = pd.DataFrame([{
+        "Shots": shots,
+        "Passes": passes,
+        "Age": age,
+        "Appearances": appearances
+    }])
 
-        target = df.columns[-1]
-        X = df.drop(columns=[target])
-        y = df[target]
+    prediction = reg_model.predict(player_input)
+    st.success(f"⚽ Predicted Goals: **{round(prediction[0], 2)}**")
 
-        model = LinearRegression()
-        model.fit(X, y)
+# -------------------------------------------------
+# MATCH OUTCOME PREDICTION
+# -------------------------------------------------
+st.header("🏟 Match Outcome Prediction")
 
-        st.subheader("Enter Player Stats")
+with st.form("match_form"):
+    home_form = st.slider("Home Team Form", 0, 5, 3)
+    away_form = st.slider("Away Team Form", 0, 5, 3)
+    home_goals = st.number_input("Home Goals Avg", 0.0, 5.0, 1.5)
+    away_goals = st.number_input("Away Goals Avg", 0.0, 5.0, 1.2)
 
-        user_input = {}
-        for col in X.columns:
-            value = st.text_input(f"{col}", placeholder="Enter numeric value")
-            if value != "":
-                user_input[col] = float(value)
+    submit_match = st.form_submit_button("Predict Match Outcome")
 
-        if st.button("Predict Performance"):
-            if len(user_input) != len(X.columns):
-                st.warning("⚠️ Please fill all fields.")
-            else:
-                input_df = pd.DataFrame([user_input])
-                prediction = model.predict(input_df)
-                st.success(f"⭐ Predicted Performance: {prediction[0]:.2f}")
+if submit_match:
+    match_input = pd.DataFrame([{
+        "Home_Form": home_form,
+        "Away_Form": away_form,
+        "Home_Goals": home_goals,
+        "Away_Goals": away_goals
+    }])
+
+    result = clf_model.predict(match_input)[0]
+    label_map = {0: "❌ Loss", 1: "➖ Draw", 2: "✅ Win"}
+
+    st.success(f"🏆 Predicted Result: **{label_map[result]}**")
+
 
 
 
