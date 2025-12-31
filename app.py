@@ -2,73 +2,70 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# -------------------------------------------------
-# Load trained models and scalers
-# -------------------------------------------------
-reg_model = joblib.load("rf_regression_model.pkl")
-clf_model = joblib.load("gb_classification_model.pkl")
+# Load trained model and scaler
+model = joblib.load("rf_regression_model.pkl")
 scaler = joblib.load("scaler.pkl")
-feature_names = joblib.load("feature_names.pkl")
+
+# Feature order (must match training)
+FEATURES = ["Goals", "Shots", "Passes", "Appearances"]
 
 # -------------------------------------------------
 # APP CONFIG
 # -------------------------------------------------
-st.set_page_config(page_title="Football Prediction App", layout="centered")
+st.set_page_config(page_title="Football Predictor", layout="centered")
 st.title("⚽ Football Prediction System")
 
-# -------------------------------------------------
-# SIDEBAR MENU
-# -------------------------------------------------
+# Sidebar menu
 menu = st.sidebar.radio(
-    "Select Prediction Type",
+    "Select Option",
     ["Player Performance", "Match Outcome"]
 )
 
-# =================================================
-# 1️⃣ PLAYER PERFORMANCE PREDICTION
-# =================================================
+# -------------------------------------------------
+# SCREEN 1 — PLAYER PERFORMANCE
+# -------------------------------------------------
 if menu == "Player Performance":
 
     st.header("📊 Player Performance Prediction")
 
-    goals = st.number_input("Goals", 0, 50, 5)
-    shots = st.number_input("Shots", 0, 200, 40)
-    passes = st.number_input("Passes", 0, 3000, 800)
-    appearances = st.number_input("Appearances", 0, 50, 20)
+    inputs = []
+    for feature in FEATURES:
+        value = st.number_input(feature, value=0.0)
+        inputs.append(value)
 
     if st.button("Predict Player Performance"):
-        input_df = pd.DataFrame(
-            [[goals, shots, passes, appearances]],
-            columns=feature_names
-        )
-
+        input_df = pd.DataFrame([inputs], columns=FEATURES)
         scaled = scaler.transform(input_df)
-        prediction = reg_model.predict(scaled)
+        prediction = model.predict(scaled)
 
         st.success(f"🎯 Predicted Goals: {round(prediction[0], 2)}")
 
-# =================================================
-# 2️⃣ MATCH OUTCOME PREDICTION
-# =================================================
+# -------------------------------------------------
+# SCREEN 2 — MATCH OUTCOME
+# -------------------------------------------------
 elif menu == "Match Outcome":
 
     st.header("🏟 Match Outcome Prediction")
 
-    goals = st.number_input("Goals", 0, 50, 5)
-    shots = st.number_input("Shots", 0, 200, 40)
-    passes = st.number_input("Passes", 0, 3000, 800)
-    appearances = st.number_input("Appearances", 0, 50, 20)
+    inputs = []
+    for feature in FEATURES:
+        value = st.number_input(feature, value=0.0)
+        inputs.append(value)
 
     if st.button("Predict Match Outcome"):
-        input_df = pd.DataFrame(
-            [[goals, shots, passes, appearances]],
-            columns=feature_names
-        )
+        input_df = pd.DataFrame([inputs], columns=FEATURES)
+        prediction = model.predict(input_df)
 
-        prediction = clf_model.predict(input_df)
-        label_map = {0: "Loss", 1: "Draw", 2: "Win"}
+        # Simple interpretation
+        if prediction[0] < 1:
+            result = "Loss"
+        elif prediction[0] < 2:
+            result = "Draw"
+        else:
+            result = "Win"
 
-        st.success(f"🏆 Predicted Result: {label_map[int(prediction[0])]}")
+        st.success(f"🏆 Predicted Match Outcome: {result}")
+
 
 
 
