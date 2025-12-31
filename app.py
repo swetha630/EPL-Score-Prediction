@@ -5,10 +5,23 @@ import joblib
 # --------------------------------------------------
 # Load models and preprocessing objects
 # --------------------------------------------------
+# Load models
 reg_model = joblib.load("rf_regression_model.pkl")
 clf_model = joblib.load("gb_classification_model.pkl")
 scaler = joblib.load("scaler.pkl")
-feature_names = joblib.load("feature_names.pkl")
+
+# Get feature names from trained model
+feature_names = clf_model.feature_names_in_
+
+# Build input
+input_df = pd.DataFrame(
+    [[goals, shots, passes, appearances]],
+    columns=feature_names
+)
+
+# Predict
+prediction = clf_model.predict(input_df)
+
 
 # --------------------------------------------------
 # App UI
