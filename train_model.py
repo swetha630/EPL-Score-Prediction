@@ -4,7 +4,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 
 # Load dataset
-df = pd.read_csv("your_dataset.csv")
+df = pd.read_csv("infosys_project.csv")
+
 
 # ⚠️ CHOOSE FEATURES ONCE AND NEVER CHANGE
 FEATURES = ["Goals", "Shots", "Passes", "Appearances"]
