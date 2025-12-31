@@ -4,7 +4,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 
 # Load dataset
-df = pd.read_csv("infosys_project.csv")
+df = pd.read_csv("infosys_project(2).csv")
 
 
 # ⚠️ CHOOSE FEATURES ONCE AND NEVER CHANGE
