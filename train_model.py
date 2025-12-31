@@ -1,32 +1,29 @@
 import pandas as pd
 import joblib
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 
-# Load data
-df = pd.read_csv("dataset.csv")
+# Load dataset
+df = pd.read_csv("your_dataset.csv")
 
-# Feature selection
-features = ["Goals", "Shots", "Passes", "Appearances"]
-X = df[features]
-y_reg = df["Goals"]
+# ⚠️ CHOOSE FEATURES ONCE AND NEVER CHANGE
+FEATURES = ["Goals", "Shots", "Passes", "Appearances"]
 
-# Scaling
+X = df[FEATURES]
+y = df["Goals"]
+
+# Scale
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-# Train-test split
-X_train, X_test, y_train, y_test = train_test_split(
-    X_scaled, y_reg, test_size=0.2, random_state=42
-)
-
 # Train model
-rf = RandomForestRegressor(random_state=42)
-rf.fit(X_train, y_train)
+model = RandomForestRegressor(random_state=42)
+model.fit(X_scaled, y)
 
-# Save model & scaler
-joblib.dump(rf, "rf_regression_model.pkl")
+# Save everything
+joblib.dump(model, "rf_regression_model.pkl")
 joblib.dump(scaler, "scaler.pkl")
+joblib.dump(FEATURES, "feature_names.pkl")
 
-print("Model saved successfully!")
+print("Training complete. Models saved.")
+
