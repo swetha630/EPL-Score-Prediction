@@ -2,30 +2,19 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# --------------------------------------------------
-# Load models and preprocessing objects
-# --------------------------------------------------
-# Load models
+# -------------------------------
+# Load trained models & metadata
+# -------------------------------
 reg_model = joblib.load("rf_regression_model.pkl")
 clf_model = joblib.load("gb_classification_model.pkl")
 scaler = joblib.load("scaler.pkl")
 
-# Get feature names from trained model
-feature_names = clf_model.feature_names_in_
+# IMPORTANT: load correct feature order
+feature_names = reg_model.feature_names_in_
 
-# Build input
-input_df = pd.DataFrame(
-    [[goals, shots, passes, appearances]],
-    columns=feature_names
-)
-
-# Predict
-prediction = clf_model.predict(input_df)
-
-
-# --------------------------------------------------
+# -------------------------------
 # App UI
-# --------------------------------------------------
+# -------------------------------
 st.set_page_config(page_title="Football Prediction App", layout="centered")
 st.title("⚽ Football Performance Prediction")
 
@@ -34,9 +23,9 @@ menu = st.sidebar.radio(
     ["Player Performance", "Match Outcome"]
 )
 
-# --------------------------------------------------
-# PLAYER PERFORMANCE PREDICTION
-# --------------------------------------------------
+# =====================================================
+# PLAYER PERFORMANCE
+# =====================================================
 if menu == "Player Performance":
     st.header("📊 Player Performance Prediction")
 
@@ -56,9 +45,9 @@ if menu == "Player Performance":
 
         st.success(f"🎯 Predicted Goals: {round(prediction[0], 2)}")
 
-# --------------------------------------------------
-# MATCH OUTCOME PREDICTION
-# --------------------------------------------------
+# =====================================================
+# MATCH OUTCOME
+# =====================================================
 elif menu == "Match Outcome":
     st.header("🏟 Match Outcome Prediction")
 
@@ -76,7 +65,8 @@ elif menu == "Match Outcome":
         prediction = clf_model.predict(input_df)
         label_map = {0: "Loss", 1: "Draw", 2: "Win"}
 
-        st.success(f"🏆 Predicted Outcome: {label_map[int(prediction[0])]}")
+        st.success(f"🏆 Predicted Result: {label_map[int(prediction[0])]}")
+
 
 
 
