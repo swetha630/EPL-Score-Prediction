@@ -145,26 +145,6 @@ The model performance can be assessed using:
 
 ---
 
-# 📸 Screenshots
-
-> Add screenshots of:
-
-- Dataset overview
-- Feature correlation heatmap
-- Model training output
-- Prediction results
-- Performance graphs
-
-Example:
-
-```
-images/
-│
-├── dataset.png
-├── heatmap.png
-├── prediction.png
-└── evaluation.png
-```
 
 ---
 
